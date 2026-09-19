@@ -169,6 +169,8 @@
     outline:none; border-color:var(--steel-500); box-shadow:0 0 0 4px rgba(var(--accent-rgb),.14);
   }
   .field textarea{resize:vertical; min-height:52px;}
+  #veiPlaca{text-transform:uppercase;}
+  .field input.invalid{border-color:#C0392B; box-shadow:0 0 0 4px rgba(192,57,43,.15);}
   .field textarea.obs-box{min-height:140px;}
   .print-date{display:none;}
 
@@ -420,6 +422,7 @@
     .field label:not(:empty)::after{content:":"; margin-right:3px;}
     .item-row input, .field input, .field select, .field textarea{border:none; padding:1px 0; font-size:11.5px; background:transparent; font-weight:600;}
     .field select{-webkit-appearance:none; appearance:none;}
+    .field input.invalid{border:none !important; box-shadow:none !important;}
     /* remove as setas do campo numérico para não deslocar o texto e desalinhar as colunas */
     .item-row input[type="number"], .totals-row input[type="number"]{-moz-appearance:textfield; text-align:right;}
     .item-row input[type="number"]::-webkit-outer-spin-button,
@@ -591,6 +594,8 @@
         <div class="field"><label>Telefone</label><input id="cliFone" placeholder="(00) 00000-0000" inputmode="tel"></div>
         <div class="field client-doc-type"><label>Tipo de documento</label><select id="cliTipo"><option value="CPF">CPF</option><option value="CNPJ">CNPJ</option></select></div>
         <div class="field"><label><span id="cliDocLabel" class="screen-doc-label">CPF (opcional)</span><span class="print-doc-label" id="cliDocPrintLabel">CPF</span></label><input id="cliDoc" placeholder="000.000.000-00 (opcional)" inputmode="numeric"></div>
+        <div class="field full no-print" id="cliRespBtnWrap" style="display:none"><button type="button" class="btn btn-ghost" id="btnAddResp">➕ Adicionar responsável</button></div>
+        <div class="field full" id="cliRespWrap" style="display:none"><label>Responsável</label><input id="cliResp" placeholder="Nome do responsável pela empresa" autocomplete="off"></div>
         <div class="field full no-print" id="cliEnderecoBtnWrap"><button type="button" class="btn btn-ghost" id="btnAddEndereco">➕ Adicionar endereço do cliente</button></div>
         <div class="field full" id="cliEnderecoWrap" style="display:none"><label>Endereço</label><input id="cliEndereco" placeholder="Rua, número, bairro, cidade"></div>
       </div>
@@ -603,7 +608,7 @@
       <div class="field-grid">
         <div class="field"><label>Marca / Modelo</label><input id="veiModelo" placeholder="Ex: VW Gol 1.6"></div>
         <div class="field"><label>Ano</label><input id="veiAno" placeholder="Ex: 2018" inputmode="numeric"></div>
-        <div class="field"><label>Placa/Tag</label><input id="veiPlaca" placeholder="ABC1D23 ou TAG"></div>
+        <div class="field"><label>Placa/Tag</label><input id="veiPlaca" placeholder="ABC1D23 ou TAG" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>
         <div class="field">
           <label>Refrigerante</label>
           <select id="veiGas">
@@ -766,7 +771,7 @@
   var els = {};
   ['oficinaLogo','oficinaLogoFile','oficinaNome','oficinaSubtitulo','oficinaFone','oficinaCnpj','oficinaEmail','oficinaEnd','oficinaFonePrint','oficinaCnpjPrint','oficinaEmailPrint','oficinaEndPrint','oficinaNomePrint','oficinaSubtituloPrint','orcNumLabel','dataOrc','validadeOrc',
    'dataOrcPrint','validadeOrcPrint',
-   'cliNome','cliFone','cliTipo','cliDoc','cliEndereco','cliEnderecoWrap','cliEnderecoBtnWrap','btnAddEndereco','cliDocLabel','cliDocPrintLabel','veiModelo','veiAno','veiPlaca','veiGas',
+   'cliNome','cliFone','cliTipo','cliDoc','cliResp','cliRespWrap','cliRespBtnWrap','btnAddResp','cliEndereco','cliEnderecoWrap','cliEnderecoBtnWrap','btnAddEndereco','cliDocLabel','cliDocPrintLabel','veiModelo','veiAno','veiPlaca','veiGas',
    'chipRow','itemsList','addItemBtn','chipRowPecas','itemsListPecas','addItemBtnPecas',
    'subtotalServicosVal','subtotalPecasVal','subtotalVal','descontoInput','discountRow','totalVal',
    'obsField','btnPdf','btnWpp','btnSave','btnAprovado','btnNew','savedList',
@@ -865,7 +870,29 @@
     if(els.cliDocPrintLabel) els.cliDocPrintLabel.textContent=cnpj?'CNPJ':'CPF';
     els.cliDoc.placeholder=(cnpj?'00.000.000/0000-00':'000.000.000-00')+' (opcional)';
     els.cliDoc.value=maskDoc(els.cliDoc.value, els.cliTipo.value);
+    updateRespUI();
   }
+  function updateRespUI(){
+    var cnpj = els.cliTipo.value === 'CNPJ';
+    var temResp = !!(els.cliResp.value && els.cliResp.value.trim());
+    els.cliRespWrap.style.display = (cnpj && temResp) ? '' : 'none';
+    els.cliRespBtnWrap.style.display = (cnpj && !temResp) ? '' : 'none';
+  }
+  els.btnAddResp.addEventListener('click', function(){
+    els.cliRespWrap.style.display = '';
+    els.cliRespBtnWrap.style.display = 'none';
+    els.cliResp.focus();
+  });
+
+  // Placa/Tag: sempre em letras maiúsculas (mantém a posição do cursor ao digitar)
+  els.veiPlaca.addEventListener('input', function(){
+    var el = els.veiPlaca, up = el.value.toUpperCase();
+    if(up !== el.value){
+      var a = el.selectionStart, b = el.selectionEnd;
+      el.value = up;
+      try{ el.setSelectionRange(a, b); }catch(e){}
+    }
+  });
   function maskPhone(v){
     var d=(v||'').replace(/\D/g,'').slice(0,11);
     if(d.length<=10){
@@ -1075,8 +1102,8 @@
       numero: els.orcNumLabel.textContent,
       data: els.dataOrc.value,
       validade: els.validadeOrc.value,
-      cliNome: els.cliNome.value, cliFone: els.cliFone.value, cliTipo: els.cliTipo.value, cliDoc: els.cliDoc.value, cliEndereco: els.cliEndereco.value,
-      veiModelo: els.veiModelo.value, veiAno: els.veiAno.value, veiPlaca: els.veiPlaca.value, veiGas: els.veiGas.value,
+      cliNome: els.cliNome.value, cliFone: els.cliFone.value, cliTipo: els.cliTipo.value, cliDoc: els.cliDoc.value, cliResp: (els.cliTipo.value==='CNPJ' ? els.cliResp.value.trim() : ''), cliEndereco: els.cliEndereco.value,
+      veiModelo: els.veiModelo.value, veiAno: els.veiAno.value, veiPlaca: els.veiPlaca.value.toUpperCase(), veiGas: els.veiGas.value,
       items: state.items,
       pecas: state.pecas,
       desconto: parseFloat(els.descontoInput.value)||0,
@@ -1090,8 +1117,8 @@
     els.orcNumLabel.textContent = o.numero;
     els.dataOrc.value = o.data || todayISO();
     els.validadeOrc.value = o.validade || '';
-    els.cliNome.value = o.cliNome||''; els.cliFone.value = o.cliFone||''; els.cliTipo.value = o.cliTipo||'CPF'; els.cliDoc.value = o.cliDoc||''; els.cliEndereco.value = o.cliEndereco||''; updateClientDocUI(); updateEnderecoUI();
-    els.veiModelo.value = o.veiModelo||''; els.veiAno.value = o.veiAno||''; els.veiPlaca.value = o.veiPlaca||''; els.veiGas.value = o.veiGas||'';
+    els.cliNome.value = o.cliNome||''; els.cliFone.value = o.cliFone||''; els.cliTipo.value = o.cliTipo||'CPF'; els.cliDoc.value = o.cliDoc||''; els.cliResp.value = o.cliResp||''; els.cliEndereco.value = o.cliEndereco||''; updateClientDocUI(); updateEnderecoUI();
+    els.veiModelo.value = o.veiModelo||''; els.veiAno.value = o.veiAno||''; els.veiPlaca.value = (o.veiPlaca||'').toUpperCase(); els.veiGas.value = o.veiGas||'';
     state.items = (o.items && o.items.length) ? o.items.map(function(i){return {desc:i.desc,qty:i.qty,price:i.price};}) : [];
     state.pecas = (o.pecas && o.pecas.length) ? o.pecas.map(function(i){return {desc:i.desc,qty:i.qty,price:i.price};}) : [];
     els.descontoInput.value = o.desconto || 0;
@@ -1105,7 +1132,7 @@
     els.orcNumLabel.textContent = nextOrcNumber();
     els.dataOrc.value = todayISO();
     els.validadeOrc.value = addDaysISO(7);
-    els.cliNome.value=''; els.cliFone.value=''; els.cliTipo.value='CPF'; els.cliDoc.value=''; els.cliEndereco.value=''; updateClientDocUI(); updateEnderecoUI();
+    els.cliNome.value=''; els.cliFone.value=''; els.cliTipo.value='CPF'; els.cliDoc.value=''; els.cliResp.value=''; els.cliEndereco.value=''; updateClientDocUI(); updateEnderecoUI();
     els.veiModelo.value=''; els.veiAno.value=''; els.veiPlaca.value=''; els.veiGas.value='';
     state.items = [];
     state.pecas = [];
@@ -1253,6 +1280,7 @@
     var lines = [];
     lines.push((els.oficinaNome.value||'Oficina') + ' — Orçamento nº ' + data.numero);
     if(data.cliNome) lines.push('Cliente: ' + data.cliNome);
+    if(data.cliTipo==='CNPJ' && data.cliResp) lines.push('Responsável: ' + data.cliResp);
     if(data.veiModelo) lines.push('Veículo: ' + data.veiModelo + (data.veiAno?(' '+data.veiAno):'') + (data.veiPlaca?(' - '+data.veiPlaca):''));
     var sub = subtotal();
     lines.push('Total: ' + fmt(Math.max(0, sub-data.desconto)));
@@ -1297,10 +1325,11 @@
       'Cliente: ' + (data.cliNome||'—'),
       'Telefone: ' + (data.cliFone||'—'),
       (data.cliTipo==='CNPJ'?'CNPJ: ':'CPF: ') + (data.cliDoc||'—'),
+      (data.cliTipo==='CNPJ' && data.cliResp ? ('Responsável: ' + data.cliResp) : ''),
       'Veículo: ' + (data.veiModelo||'—') + (data.veiAno?(' '+data.veiAno):'') + (data.veiPlaca?(' - '+data.veiPlaca):''),
       'Refrigerante: ' + (data.veiGas||'—')
     ];
-    infoCli.forEach(function(t){ doc.text(t, margin, y); y += 5; });
+    infoCli.filter(Boolean).forEach(function(t){ doc.text(t, margin, y); y += 5; });
     if(data.cliEndereco){ doc.text('Endereço: ' + data.cliEndereco, margin, y, {maxWidth: pageW-margin*2}); y += 5; }
     y += 2;
 
@@ -1538,6 +1567,7 @@
             '<div><b>Cliente</b>' + (escapeHTML(data.cliNome)||'—') + '</div>' +
             '<div><b>Telefone</b>' + (escapeHTML(data.cliFone)||'—') + '</div>' +
             '<div><b>' + (data.cliTipo==='CNPJ'?'CNPJ':'CPF') + '</b>' + (escapeHTML(data.cliDoc)||'—') + '</div>' +
+            (data.cliTipo==='CNPJ' && data.cliResp ? ('<div><b>Responsável</b>' + escapeHTML(data.cliResp) + '</div>') : '') +
             '<div><b>Veículo</b>' + (escapeHTML(data.veiModelo)||'—') + (data.veiAno?(' '+escapeHTML(data.veiAno)):'') + '</div>' +
             '<div><b>Placa/Tag</b>' + (escapeHTML(data.veiPlaca)||'—') + '</div>' +
             '<div><b>Refrigerante</b>' + (escapeHTML(data.veiGas)||'—') + '</div>' +
