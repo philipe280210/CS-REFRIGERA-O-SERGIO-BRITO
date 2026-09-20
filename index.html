@@ -368,7 +368,7 @@
     .head-name-print{display:block; color:#000; font-size:15px; font-weight:700; white-space:normal; word-break:break-word; line-height:1.25;}
     .head-sub-print{display:block; color:#333; font-size:11px; white-space:normal; word-break:break-word; margin-top:2px;}
     .logo-edit-tools{display:none !important;}
-    #cliEnderecoBtnWrap{display:none !important;}
+    #cliEnderecoBtnWrap, #cliRespBtnWrap, .print-empty{display:none !important;}
     .only-screen{display:none !important;}
     .print-doc-label{display:inline;}
     .screen-doc-label{display:none;}
@@ -1210,7 +1210,16 @@
   // ---------- Ajuste automático para caber em 1 página ao imprimir ----------
   // Mede a altura real do conteúdo (com o mesmo CSS usado na impressão) e calcula
   // um fator de redução (--print-scale) para que tudo caiba em uma folha A4.
+  // Endereço e Responsável: na impressão só aparecem se estiverem preenchidos
+  function syncOpcionaisImpressao(){
+    [['cliEnderecoWrap','cliEndereco'],['cliRespWrap','cliResp']].forEach(function(par){
+      var wrap = els[par[0]], inp = els[par[1]];
+      if(wrap && inp) wrap.classList.toggle('print-empty', !(inp.value && inp.value.trim()));
+    });
+  }
+  window.addEventListener('beforeprint', syncOpcionaisImpressao);
   function prepareForPrint(){
+    syncOpcionaisImpressao();
     var printCss = document.getElementById('printCss');
     var sheet = document.getElementById('printSheet');
     if(!printCss || !sheet) return 1;
