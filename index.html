@@ -410,7 +410,7 @@
     #cardOrcTitle .card-title h2{
       font-size:26px; text-align:center; width:100%; letter-spacing:.12em; color:#000;
     }
-    #cardOrcTitle .orc-num{display:none;}
+    #cardOrcTitle .orc-num{display:block; font-size:11px; font-weight:600; letter-spacing:.04em; color:#000; margin-top:2px;}
     main{max-width:100%; padding:0 2px;}
     .card{border:none; box-shadow:none; margin-top:5px; break-inside:avoid; page-break-inside:avoid; border-radius:0 !important; overflow:visible !important;}
     .card-title{background:#fff; border-bottom:1.2px solid #000; padding:3px 2px;}
@@ -1085,20 +1085,17 @@
   els.addItemBtn.addEventListener('click', function(){ addServico('',1,0); });
   els.addItemBtnPecas.addEventListener('click', function(){ addPeca('',1,0); });
 
-  // Número no formato AAMMDD (data de hoje). Se já existir orçamento com
-  // o mesmo número no dia, acrescenta -2, -3... para não repetir.
-  function dataAAMMDD(){
+  // Número no formato DDMM + sequência de 3 dígitos do dia.
+  // Ex.: hoje 22/09 -> 2209001, próximo do mesmo dia -> 2209002, etc.
+  function dataDDMM(){
     var d = new Date();
-    return String(d.getFullYear()).slice(-2) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    return String(d.getDate()).padStart(2,'0') + String(d.getMonth()+1).padStart(2,'0');
   }
   function nextOrcNumber(){
-    var base = dataAAMMDD();
+    var prefixo = dataDDMM();
     var all = getAll();
-    var usados = all.map(function(o){ return o.numero; });
-    if(usados.indexOf(base) === -1) return base;
-    var i = 2;
-    while(usados.indexOf(base + '-' + i) !== -1) i++;
-    return base + '-' + i;
+    var doDia = all.filter(function(o){ return (o.numero||'').indexOf(prefixo) === 0; });
+    return prefixo + String(doDia.length + 1).padStart(3,'0');
   }
 
   function getAll(){
@@ -1454,13 +1451,10 @@
   }
   function setAllOS(arr){ localStorage.setItem(OS_KEY, JSON.stringify(arr)); }
   function nextOSNumber(){
-    var base = dataAAMMDD();
+    var prefixo = dataDDMM();
     var all = getAllOS();
-    var usados = all.map(function(o){ return o.numero; });
-    if(usados.indexOf(base) === -1) return base;
-    var i = 2;
-    while(usados.indexOf(base + '-' + i) !== -1) i++;
-    return base + '-' + i;
+    var doDia = all.filter(function(o){ return (o.numero||'').indexOf(prefixo) === 0; });
+    return prefixo + String(doDia.length + 1).padStart(3,'0');
   }
   function escapeHTML(s){
     return String(s==null?'':s).replace(/[&<>"']/g, function(c){
