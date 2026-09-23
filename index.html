@@ -577,7 +577,7 @@
 <main>
 
   <div class="card" id="cardOrcTitle">
-    <div class="card-title"><h2><span class="orc-word">Orçamento</span><span class="orc-num"> nº <span id="orcNumLabel">001</span></span></h2></div>
+    <div class="card-title"><h2><span class="orc-word">Orçamento</span><span class="orc-num"> nº <span id="orcNumLabel"></span></span></h2></div>
     <div class="card-body" id="orcDateBody">
       <div class="field-grid">
         <div class="field"><label>Data do orçamento</label><input type="date" id="dataOrc"><span class="print-date" id="dataOrcPrint"></span></div>
@@ -1085,10 +1085,20 @@
   els.addItemBtn.addEventListener('click', function(){ addServico('',1,0); });
   els.addItemBtnPecas.addEventListener('click', function(){ addPeca('',1,0); });
 
+  // Número no formato AAMMDD (data de hoje). Se já existir orçamento com
+  // o mesmo número no dia, acrescenta -2, -3... para não repetir.
+  function dataAAMMDD(){
+    var d = new Date();
+    return String(d.getFullYear()).slice(-2) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+  }
   function nextOrcNumber(){
+    var base = dataAAMMDD();
     var all = getAll();
-    var n = all.length + 1;
-    return String(n).padStart(3,'0');
+    var usados = all.map(function(o){ return o.numero; });
+    if(usados.indexOf(base) === -1) return base;
+    var i = 2;
+    while(usados.indexOf(base + '-' + i) !== -1) i++;
+    return base + '-' + i;
   }
 
   function getAll(){
@@ -1444,9 +1454,13 @@
   }
   function setAllOS(arr){ localStorage.setItem(OS_KEY, JSON.stringify(arr)); }
   function nextOSNumber(){
+    var base = dataAAMMDD();
     var all = getAllOS();
-    var n = all.length + 1;
-    return String(n).padStart(3,'0');
+    var usados = all.map(function(o){ return o.numero; });
+    if(usados.indexOf(base) === -1) return base;
+    var i = 2;
+    while(usados.indexOf(base + '-' + i) !== -1) i++;
+    return base + '-' + i;
   }
   function escapeHTML(s){
     return String(s==null?'':s).replace(/[&<>"']/g, function(c){
